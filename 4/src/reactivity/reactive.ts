@@ -12,4 +12,12 @@ function readonly(raw) {
   return createReactiveObject(raw, readonlyHandlers);
 }
 
-export { reactive, readonly };
+function isReactive(target) {
+  return !!target.__isReactive__;
+}
+
+function isReadonly(target) {
+  return !!target.__isReadonly__;
+}
+
+export { reactive, readonly, isReactive, isReadonly };
