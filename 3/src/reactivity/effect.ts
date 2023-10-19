@@ -2,8 +2,18 @@ interface EffectOptions {
   scheduler?: Function;
   onStop?: Function;
 }
+// 依赖容器
+const targetMap = new Map();
+// 活动的实例
+let activeEffect: null | ReactiveEffect = null;
+// 是否应该触发
+let shouldTrigger = true;
+
 class ReactiveEffect {
   private _fn;
+  /**
+   * ! 定义变量反向收集当前ReactiveEffect所集合的集合
+   * */
   public depsSet: Set<Set<ReactiveEffect>> = new Set();
   public active = true;
   public scheduler?: Function;
@@ -16,20 +26,30 @@ class ReactiveEffect {
 
   run() {
     activeEffect = this;
-    this.active = false;
+    shouldTrigger = false;
     const r = this._fn();
     activeEffect = null;
-    this.active = true;
+    shouldTrigger = true;
     return r;
   }
 
+  /**
+   * ! 清空当前所有集合中关于当前ReactiveEffect的引用
+   */
   stop() {
-    this.depsSet.forEach((dep) => {
-      dep.delete(this);
-    });
-    this.depsSet.clear();
-    this.onStop && this.onStop();
+    if (this.active) {
+      clearEffect(this);
+      this.onStop && this.onStop();
+      this.active = false;
+    }
   }
+}
+
+function clearEffect(effect) {
+  effect.depsSet.forEach((dep) => {
+    dep.delete(effect);
+  });
+  effect.depsSet.clear();
 }
 
 function effect(fn, options: EffectOptions = {}) {
@@ -39,11 +59,6 @@ function effect(fn, options: EffectOptions = {}) {
   runner._effect = _effect;
   return runner;
 }
-
-// 依赖容器
-const targetMap = new Map();
-// 活动的实例
-let activeEffect: null | ReactiveEffect = null;
 
 // 收集依赖
 function track(target, key) {
@@ -66,15 +81,14 @@ function track(target, key) {
 
 // 触发依赖
 function trigger(target, key) {
+  if (!shouldTrigger) return;
   const depsMap = targetMap.get(target);
   const deps = depsMap.get(key) as Set<ReactiveEffect>;
   deps.forEach((effect) => {
-    if (effect.active) {
-      if (effect?.scheduler) {
-        effect.scheduler();
-      } else {
-        effect && effect.run();
-      }
+    if (effect?.scheduler) {
+      effect.scheduler();
+    } else {
+      effect && effect.run();
     }
   });
 }
