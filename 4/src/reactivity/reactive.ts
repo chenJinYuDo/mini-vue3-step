@@ -1,4 +1,8 @@
-import { mutableHandlers, readonlyHandlers } from "./baseHandler";
+import {
+  ReactiveFlags,
+  mutableHandlers,
+  readonlyHandlers,
+} from "./baseHandler";
 
 function createReactiveObject(target, baseHandles) {
   return new Proxy(target, baseHandles);
@@ -13,11 +17,11 @@ function readonly(raw) {
 }
 
 function isReactive(target) {
-  return !!target.__isReactive__;
+  return !!target[ReactiveFlags.isReactive];
 }
 
 function isReadonly(target) {
-  return !!target.__isReadonly__;
+  return !!target[ReactiveFlags.isReadonly];
 }
 
 export { reactive, readonly, isReactive, isReadonly };
