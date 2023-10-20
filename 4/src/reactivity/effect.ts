@@ -6,6 +6,8 @@ interface EffectOptions {
 const targetMap = new Map();
 // 活动的实例
 let activeEffect: null | ReactiveEffect = null;
+// 是否应该收集
+let shouldTrack = false;
 // 是否应该触发
 let shouldTrigger = true;
 
@@ -26,9 +28,11 @@ class ReactiveEffect {
 
   run() {
     activeEffect = this;
+    shouldTrack = true;
     shouldTrigger = false;
     const r = this._fn();
     activeEffect = null;
+    shouldTrack = false;
     shouldTrigger = true;
     return r;
   }
@@ -62,7 +66,7 @@ function effect(fn, options: EffectOptions = {}) {
 
 // 收集依赖
 function track(target, key) {
-  if (!activeEffect) return;
+  if (!activeEffect || !shouldTrack) return;
   let depsMap = targetMap.get(target) as Map<unknown, Set<ReactiveEffect>>;
   if (!depsMap) {
     depsMap = new Map();

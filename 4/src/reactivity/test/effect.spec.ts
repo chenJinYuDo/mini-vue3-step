@@ -64,17 +64,19 @@ describe("effect", () => {
     let dummy;
     const obj = reactive({ prop: 1 });
     const runner = effect(() => {
+      obj.prop++;
       dummy = obj.prop;
     });
     obj.prop = 2;
-    expect(dummy).toBe(2);
+    expect(dummy).toBe(3);
     stop(runner);
-    obj.prop = 3;
-    expect(dummy).toBe(2);
+    // obj.prop = 3;
+    obj.prop++;
+    expect(dummy).toBe(3);
 
     // stopped effect should still be manually callable
     runner();
-    expect(dummy).toBe(3);
+    expect(dummy).toBe(5);
   });
 
   it("onStop", () => {
