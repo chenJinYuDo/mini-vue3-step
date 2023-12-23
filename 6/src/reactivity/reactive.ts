@@ -29,4 +29,8 @@ function isReadonly(target) {
   return !!target[ReactiveFlags.isReadonly];
 }
 
-export { reactive, readonly, isReactive, isReadonly, shallowReadonly };
+function isProxy(raw) {
+  return isReactive(raw) || isReadonly(raw);
+}
+
+export { reactive, readonly, isReactive, isReadonly, isProxy, shallowReadonly };

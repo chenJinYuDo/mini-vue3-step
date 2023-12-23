@@ -15,3 +15,5 @@
 - 支持 readonly reactive 嵌套
 
 - 支持 shallowReadonly
+
+- 实现 isProxy
