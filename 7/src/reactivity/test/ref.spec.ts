@@ -1,6 +1,6 @@
 import { effect } from "../effect";
 import { reactive } from "../reactive";
-import { ref, isRef, unRef } from "../ref";
+import { ref, isRef, unRef, proxyRefs } from "../ref";
 describe("ref", () => {
   it("main", () => {
     const refI = ref(1);
@@ -57,12 +57,31 @@ describe("ref", () => {
     expect(isRef(a)).toBe(false);
     expect(isRef(reactiveI)).toBe(false);
   });
-});
 
-it("isRef", () => {
-  const refI = ref(1);
-  const a = 1;
+  it("unRef", () => {
+    const refI = ref(1);
+    const a = 1;
 
-  expect(unRef(refI)).toBe(1);
-  expect(unRef(a)).toBe(1);
+    expect(unRef(refI)).toBe(1);
+    expect(unRef(a)).toBe(1);
+  });
+
+  it("proxyRefs", () => {
+    const cjy = {
+      a: ref("1"),
+      b: 4,
+    };
+    const proxyRefsCjy = proxyRefs(cjy);
+    expect(cjy.a.value).toBe("1");
+    expect(proxyRefsCjy.a).toBe("1");
+    expect(proxyRefsCjy.b).toBe(4);
+
+    proxyRefsCjy.a = "2";
+    expect(cjy.a.value).toBe("2");
+    expect(proxyRefsCjy.a).toBe("2");
+
+    proxyRefsCjy.a = ref("10");
+    expect(cjy.a.value).toBe("10");
+    expect(proxyRefsCjy.a).toBe("10");
+  });
 });
