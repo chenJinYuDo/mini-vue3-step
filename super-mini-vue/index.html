@@ -1,0 +1,199 @@
+<div id="app"></div>
+<script>
+  function h(tag, props, children) {
+    return {
+      tag,
+      props,
+      children,
+    };
+  }
+  function mount(vnode, container) {
+    const { tag, props, children } = vnode;
+    const el = (vnode.el = document.createElement(tag));
+    if (props) {
+      for (const key in props) {
+        const value = props[key];
+        if (key.startsWith("on")) {
+          el.addEventListener(key.slice(2).toLowerCase(), value);
+        } else {
+          el.setAttribute(key, value);
+        }
+      }
+    }
+
+    if (typeof children === "string") {
+      const textNode = document.createTextNode(children);
+      el.append(textNode);
+    } else if (Array.isArray(children)) {
+      children.forEach((vnode) => {
+        mount(vnode, el);
+      });
+    }
+
+    container.append(el);
+  }
+  // oldVnode、newVnode
+  function patch(n1, n2) {
+    if (n1.tag === n2.tag) {
+      const el = (n2.el = n1.el);
+
+      const oldProps = n1.props || {};
+      const newProps = n2.props || {};
+
+      // 增加及更新
+      for (const key in newProps) {
+        const oldValue = oldProps[key];
+        const newValue = newProps[key];
+        if (oldValue != newValue) {
+          el.setAttribute(key, newValue);
+        }
+      }
+      // 删除
+      for (const key in oldProps) {
+        if (!(key in newProps)) {
+          el.removeAttribute(key);
+        }
+      }
+
+      const oldChildren = n1.children || [];
+      const newChildren = n2.children || [];
+
+      if (typeof newChildren == "string") {
+        if (typeof oldChildren == "string") {
+          if (newChildren != oldChildren) {
+            el.textContent = newChildren;
+          }
+        } else if (Array.isArray(oldChildren)) {
+          el.textContent = newChildren;
+        }
+      } else if (Array.isArray(newChildren)) {
+        if (typeof oldChildren == "string") {
+          el.innerHTML = "";
+          newChildren.forEach((child) => {
+            mount(child, el);
+          });
+        } else {
+          // patch 算法最重要的部分
+          const length = Math.min(oldChildren.length, newChildren.length);
+          for (let i = 0; i < length; i++) {
+            patch(oldChildren[i], newChildren[i]);
+          }
+          if (newChildren.length > length) {
+            newChildren.slice(length).forEach((addChild) => {
+              mount(addChild, el);
+            });
+          }
+          if (oldChildren.length > length) {
+            for (let index = length; index < oldChildren.length; index++) {
+              const oldVnode = oldChildren[index];
+              oldVnode.el.parent.removeChild(oldVnode.el);
+            }
+          }
+        }
+      }
+    } else {
+      // replace
+    }
+  }
+  let activeEffect;
+
+  class Dep {
+    constructor() {
+      this.subscribers = new Set();
+    }
+    depend() {
+      if (activeEffect) {
+        this.subscribers.add(activeEffect);
+      }
+    }
+    notify() {
+      this.subscribers.forEach((effect) => {
+        effect();
+      });
+    }
+  }
+
+  function watchEffect(effect) {
+    activeEffect = effect;
+    effect();
+    activeEffect = null;
+  }
+
+  const targetMap = new WeakMap();
+
+  function getDep(target, key) {
+    let depsMap = targetMap.get(target);
+
+    if (!depsMap) {
+      depsMap = new Map();
+      targetMap.set(target, depsMap);
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      dep = new Dep();
+      depsMap.set(key, dep);
+    }
+    return dep;
+  }
+  const reactiveHandler = {
+    get(target, key, receiver) {
+      let dep = getDep(target, key, receiver);
+      dep.depend();
+      return Reflect.get(target, key);
+    },
+    set(target, key, value, receiver) {
+      const res = Reflect.set(target, key, value, receiver);
+      let dep = getDep(target, key);
+      dep.notify();
+      return res;
+    },
+  };
+  function reactive(obj) {
+    return new Proxy(obj, reactiveHandler);
+  }
+  function ref(target) {
+    let value = target;
+    let dep = new Dep();
+    const obj = {
+      get value() {
+        dep.depend();
+        return value;
+      },
+      set value(newVal) {
+        value = newVal;
+        dep.notify();
+      },
+    };
+    return obj;
+  }
+  const App = {
+    data: { state: reactive({ count: 0 }) },
+    render() {
+      return h(
+        "div",
+        {
+          onClick: () => {
+            this.data.state.count++;
+          },
+        },
+        String(this.data.state.count)
+      );
+    },
+  };
+  function mountApp(component, container) {
+    let isMounted = false;
+    let preVdom;
+    watchEffect(() => {
+      if (!isMounted) {
+        preVdom = component.render();
+        mount(preVdom, container);
+        isMounted = true;
+      } else {
+        let newVdom = component.render();
+        patch(preVdom, newVdom);
+        preVdom = newVdom;
+      }
+    });
+  }
+  mountApp(App, document.getElementById("app"));
+</script>

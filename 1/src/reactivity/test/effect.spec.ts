@@ -4,7 +4,7 @@ describe("effect", () => {
   it("main", () => {
     const user = reactive({
       age: 17,
-      name: "gb",
+      name: "gg",
     });
     let age = 0;
 

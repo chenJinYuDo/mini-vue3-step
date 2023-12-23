@@ -3,23 +3,19 @@ class ReactiveEffect {
   constructor(fn) {
     this._fn = fn;
   }
-
   run() {
     activeEffect = this;
     this._fn();
   }
 }
-
 function effect(fn) {
   const _effect = new ReactiveEffect(fn);
   return _effect.run();
 }
-
 // 依赖容器
 const targetMap = new Map();
 // 活动的实例
 let activeEffect: null | ReactiveEffect = null;
-
 // 收集依赖
 function track(target, key) {
   let depsMap = targetMap.get(target) as Map<unknown, Set<ReactiveEffect>>;
@@ -35,7 +31,6 @@ function track(target, key) {
   }
   deps.add(activeEffect!);
 }
-
 // 触发依赖
 function trigger(target, key) {
   const depsMap = targetMap.get(target);
