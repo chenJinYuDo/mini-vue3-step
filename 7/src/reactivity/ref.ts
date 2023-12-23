@@ -5,6 +5,7 @@ class RefImpl {
   private _value;
   rawValue; // 为了检查值是否相同
   deps: Set<ReactiveEffect>;
+  public readonly __v_isRef = true;
   constructor(value) {
     this.rawValue = value;
     this._value = convert(value);
@@ -33,4 +34,12 @@ const convert = (v) => {
 
 export const ref = (raw) => {
   return new RefImpl(raw);
+};
+
+export const isRef = (ref) => {
+  return !!ref.__v_isRef;
+};
+
+export const unRef = (ref) => {
+  return isRef(ref) ? ref.value : ref;
 };
