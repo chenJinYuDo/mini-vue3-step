@@ -26,8 +26,13 @@ function mountComponent(vnode, container) {
   setupRenderEffect(instance, vnode, container);
 }
 function setupRenderEffect(instance, vnode, container) {
-  const subTree = instance.render();
+  const { proxy } = instance;
+  // 绑定上下文
+  const subTree = instance.render.call(proxy);
   patch(subTree, container);
+
+  // 组件内部所有子树patch完成后有对应的el
+  vnode.el = subTree.el;
 }
 
 function processElement(vnode, container) {
@@ -36,7 +41,7 @@ function processElement(vnode, container) {
 function mountElement(vnode, container) {
   const { type, props = {}, children = [] } = vnode;
   // DOM元素
-  const el = document.createElement(type);
+  const el = (vnode.el = document.createElement(type));
 
   // 设置属性
   for (const key in props) {
