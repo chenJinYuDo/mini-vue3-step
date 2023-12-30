@@ -3,7 +3,6 @@ import { createComponentInstance, setupComponent } from "./component";
 
 export function render(vnode, container) {
   // 调用patch方法
-  // patch(null, vnode, el);
   patch(vnode, container);
 }
 
@@ -61,7 +60,7 @@ function mountElement(vnode, container) {
     el.textContent = children;
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     children.forEach((child) => {
-      mountElement(child, el);
+      patch(child, el);
     });
   }
 

@@ -1,3 +1,5 @@
+import { shallowReadonly } from "../reactivity/index";
+import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentsPublicInstance";
 
 export function createComponentInstance(vnode) {
@@ -11,7 +13,7 @@ export function createComponentInstance(vnode) {
 
 export function setupComponent(instance) {
   // 初始化props
-  // initProps(instance, instance.vnode.props);
+  initProps(instance, instance.vnode.props);
   // 初始化slots
   // initSlots(instance, instance.vnode.children);
   // 调用setup函数
@@ -43,7 +45,7 @@ function setupStatefulComponent(instance) {
 
   const { setup } = Component;
   if (setup) {
-    const setupResult = setup();
+    const setupResult = setup(shallowReadonly(instance.props));
     handleSetupResult(instance, setupResult);
   }
 }
