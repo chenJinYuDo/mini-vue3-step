@@ -46,7 +46,14 @@ function mountElement(vnode, container) {
 
   // 设置属性
   for (const key in props) {
-    el.setAttribute(key, props[key]);
+    const val = props[key];
+    const isOn = (key: string) => /^on[A-Z]/.test(key);
+    if (isOn(key)) {
+      const eventKey = key.slice(2).toLowerCase();
+      el.addEventListener(eventKey, val);
+    } else {
+      el.setAttribute(key, val);
+    }
   }
 
   // 设置子元素
