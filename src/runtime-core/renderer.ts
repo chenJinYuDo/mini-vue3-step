@@ -21,8 +21,11 @@ function processComponent(vnode, container) {
 }
 
 function mountComponent(vnode, container) {
+  // 1.创建组件实例
   const instance = createComponentInstance(vnode);
+  // 2.处理组件属性、插槽、调用setup函数等
   setupComponent(instance);
+  // 3.处理组件render函数调用等
   setupRenderEffect(instance, vnode, container);
 }
 function setupRenderEffect(instance, vnode, container) {
