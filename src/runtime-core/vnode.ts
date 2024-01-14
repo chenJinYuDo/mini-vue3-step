@@ -1,5 +1,12 @@
 import { ShapeFlags } from "../../shared/ShapeFlags";
 
+export const Fragment = Symbol("Fragment");
+export const Text = Symbol("Text");
+
+export function createTextVNode(text: string) {
+  return createVNode(Text, {}, text);
+}
+
 // 创建虚拟节点
 export function createVNode(type, props?, children?) {
   const vnode = {
