@@ -1,29 +1,30 @@
 import { ShapeFlags } from "../../shared/ShapeFlags";
+import { effect } from "../reactivity/effect";
 import { createComponentInstance, setupComponent } from "./component";
 import { Fragment, Text } from "./vnode";
 
 export function render(vnode, container) {
   // 调用patch方法
-  patch(vnode, container);
+  patch(null, vnode, container);
 }
 
-function patch(vnode, container) {
-  const { type, shapeFlag } = vnode;
+function patch(n1, n2, container): void {
+  const { type, shapeFlag } = n2;
 
   switch (type) {
     case Fragment:
-      processFragment(vnode, container);
+      processFragment(n2, container);
       break;
     case Text:
-      processText(vnode, container);
+      processText(n2, container);
       break;
     default:
       if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
         // 处理组件
-        processComponent(vnode, container);
+        processComponent(n2, container);
       } else if (shapeFlag & ShapeFlags.ELEMENT) {
         // 处理元素
-        processElement(vnode, container);
+        processElement(n1, n2, container);
       }
   }
 }
@@ -49,17 +50,34 @@ function mountComponent(vnode, container) {
   setupRenderEffect(instance, vnode, container);
 }
 function setupRenderEffect(instance, vnode, container) {
-  const { proxy } = instance;
-  // 绑定上下文
-  const subTree = instance.render.call(proxy);
-  patch(subTree, container);
+  effect(() => {
+    if (!instance.isMounted) {
+      const { proxy } = instance;
+      // 绑定上下文
+      const subTree = (instance.subTree = instance.render.call(proxy));
+      patch(null, subTree, container);
 
-  // 组件内部所有子树patch完成后有对应的el
-  vnode.el = subTree.el;
+      // 组件内部所有子树patch完成后有对应的el
+      vnode.el = subTree.el;
+      instance.isMounted = true;
+    } else {
+      const { proxy } = instance;
+      // 绑定上下文
+      const subTree = instance.render.call(proxy);
+      const prevSubTree = instance.subTree;
+      instance.subTree = subTree;
+      patch(prevSubTree, subTree, container);
+      console.log("update");
+    }
+  });
 }
 
-function processElement(vnode, container) {
-  mountElement(vnode, container);
+function processElement(n1, n2, container) {
+  if (!n1) {
+    mountElement(n2, container);
+  } else {
+    patchElement(n1, n2, container);
+  }
 }
 function mountElement(vnode, container) {
   const { type, props = {}, children = [], shapeFlag } = vnode;
@@ -88,8 +106,14 @@ function mountElement(vnode, container) {
   container.appendChild(el);
 }
 
+function patchElement(n1, n2, container) {
+  console.log("patchElement");
+  console.log("n1", n1);
+  console.log("n2", n2);
+}
+
 function mountChildren(children, container) {
   children.forEach((child) => {
-    patch(child, container);
+    patch(null, child, container);
   });
 }
