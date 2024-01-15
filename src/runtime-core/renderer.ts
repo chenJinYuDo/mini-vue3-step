@@ -76,7 +76,7 @@ function processElement(n1, n2, container, parentComponent) {
   if (!n1) {
     mountElement(n2, container, parentComponent);
   } else {
-    patchElement(n1, n2, container);
+    patchElement(n1, n2, container, parentComponent);
   }
 }
 function mountElement(vnode, container, parentComponent) {
@@ -109,14 +109,48 @@ function mountElement(vnode, container, parentComponent) {
   container.appendChild(el);
 }
 
-function patchElement(n1, n2, container) {
+function patchElement(n1, n2, container, parentComponent) {
   console.log("patchElement");
   console.log("n1", n1);
   console.log("n2", n2);
   const el = (n2.el = n1.el);
   const oldProps = n1.props || {};
   const newProps = n2.props || {};
+
+  patchChildren(n1, n2, el, parentComponent);
   patchProps(el, oldProps, newProps);
+}
+
+/**
+ *
+ * 1.文字节点 => 数组节点
+ * 2.文字节点 => 文字节点
+ * 3.数组节点 => 文字节点
+ * **/
+function patchChildren(n1, n2, container, parentComponent) {
+  const nextShapeFlag = n2.shapeFlag;
+  const prevShapeFlag = n1.shapeFlag;
+  const c1 = n1.children;
+  const c2 = n2.children;
+
+  if (nextShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+    if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      // 把数组清空
+      // 设置文字
+      unmountChildren(n1.children);
+    }
+    if (c1 !== c2) {
+      hostSetElementText(container, c2);
+    }
+  } else {
+    if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      hostSetElementText(container, "");
+      mountChildren(c2, container, parentComponent);
+    } else {
+      // !双端对比算法
+      // patchKeyedChildren(c1, c2, container);
+    }
+  }
 }
 
 /**
@@ -139,6 +173,11 @@ function patchProps(el, oldProps, newProps) {
     }
   }
 }
+function unmountChildren(children) {
+  for (let i = 0; i < children.length; i++) {
+    hostRemove(children[i].el);
+  }
+}
 
 function mountChildren(children, container, parentComponent) {
   children.forEach((child) => {
@@ -159,4 +198,15 @@ function hostPatchProp(el, key, prevValue, nextValue) {
       el.setAttribute(key, nextValue);
     }
   }
+}
+
+function hostRemove(el) {
+  const parent = el.parentNode;
+  if (parent) {
+    parent.removeChild(el);
+  }
+}
+
+function hostSetElementText(el, text) {
+  el.textContent = text;
 }
