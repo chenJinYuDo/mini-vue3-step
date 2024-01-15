@@ -1,6 +1,7 @@
 const publicPropsMap = {
   $el: (i) => i.vnode.el,
   $slots: (i) => i.slots,
+  $props: (i) => i.props,
 };
 
 const hasOwn = (target, key) =>
